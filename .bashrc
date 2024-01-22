@@ -140,7 +140,13 @@ fi
 # Building a docker image with some SSH thing you want to add
 build_dockerfile() {
 
-    local IMG_NAME_W_TARGET # Format: <name>:<tag>
+    local IMG_NAME_W_TARGET="$1" # Format: <name>:<tag>
+
+    # Check if img_name is provided
+    if [ -z "${IMG_NAME_W_TARGET}" ]; then
+        echo "Error: Image name (IMG_NAME) not provided."
+        return 1  # Exit the function with an error status
+    fi
 
     # Start the SSH agent
     eval $(ssh-agent)
@@ -170,12 +176,93 @@ create_container_rocker() {
     fi
 
     # If both arguments are provided, proceed with the main logic
-    rocker --network host --nvidia runtime -e NVIDIA_DRIVER_CAPABILITIES=all --git --ssh --x11 --privileged --nocleanup --name "${cont_name}" --user --volume "$(pwd):$(pwd)" -- "${img_name}"
+    rocker --network host --nvidia runtime -e NVIDIA_DRIVER_CAPABILITIES=all --git --ssh --x11 --privileged --nocleanup --name "${cont_name}" --user -- "${img_name}"
+}
+
+create_container_rocker_mount() {
+    local img_name="$1"
+    local cont_name="$2"
+
+    # Check if img_name is provided
+    if [ -z "${img_name}" ]; then
+        echo "Error: Image name (IMG_NAME) not provided."
+        return 1  # Exit the function with an error status
+    fi
+
+    # Check if cont_name is provided
+    if [ -z "${cont_name}" ]; then
+        echo "Error: Container name (CONT_NAME) not provided."
+        return 1  # Exit the function with an error status
+    fi
+
+    # If both arguments are provided, proceed with the main logic
+    rocker --network host --nvidia runtime -e NVIDIA_DRIVER_CAPABILITIES=all --git --ssh --x11 --privileged --nocleanup --name "${cont_name}" --user --volume "$(pwd)" -- "${img_name}"
+}
+
+
+create_container_docker() {
+    local img_name="$1"
+    local cont_name="$2"
+
+    # Check if img_name is provided
+    if [ -z "${img_name}" ]; then
+        echo "Error: Image name (IMG_NAME) not provided."
+        return 1  # Exit the function with an error status
+    fi
+
+    # Check if cont_name is provided
+    if [ -z "${cont_name}" ]; then
+        echo "Error: Container name (CONT_NAME) not provided."
+        return 1  # Exit the function with an error status
+    fi
+
+    # If both arguments are provided, proceed with the main logic
+    docker run --name "${cont_name}" -it "${img_name}"
+}
+
+create_container_docker_mount() {
+    local img_name="$1"
+    local cont_name="$2"
+
+    # Check if img_name is provided
+    if [ -z "${img_name}" ]; then
+        echo "Error: Image name (IMG_NAME) not provided."
+        return 1  # Exit the function with an error status
+    fi
+
+    # Check if cont_name is provided
+    if [ -z "${cont_name}" ]; then
+        echo "Error: Container name (CONT_NAME) not provided."
+        return 1  # Exit the function with an error status
+    fi
+
+    # If both arguments are provided, proceed with the main logic
+    docker run --name "${cont_name}" -v "$(pwd):$(pwd)" -it "${img_name}"
+}
+
+create_container_rocker() {
+    local img_name="$1"
+    local cont_name="$2"
+
+    # Check if img_name is provided
+    if [ -z "${img_name}" ]; then
+        echo "Error: Image name (IMG_NAME) not provided."
+        return 1  # Exit the function with an error status
+    fi
+
+    # Check if cont_name is provided
+    if [ -z "${cont_name}" ]; then
+        echo "Error: Container name (CONT_NAME) not provided."
+        return 1  # Exit the function with an error status
+    fi
+
+    # If both arguments are provided, proceed with the main logic
+    rocker --network host --nvidia runtime -e NVIDIA_DRIVER_CAPABILITIES=all --git --ssh --x11 --privileged --nocleanup --name "${cont_name}" --user -- "${img_name}"
 }
 
 # Example calling o f the above alias:
 # trtdocker "your_image_name_here" "your_container_name_here"
-# create_container_rocker trt11-8 trt
+# create_container_rocker trt11-8:latest trt
 
 joindocker() {
     if [ $# -eq 0 ]; then
