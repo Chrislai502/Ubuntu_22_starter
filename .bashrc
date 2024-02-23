@@ -15,9 +15,14 @@ HISTCONTROL=ignoreboth
 # append to the history file, don't overwrite it
 shopt -s histappend
 
-# for setting history length see HISTSIZE and HISTFILESIZE in bash(1)
-HISTSIZE=1000
-HISTFILESIZE=2000
+# The maximum number of commands to remember in the command history
+export HISTSIZE=10000
+
+# The maximum number of lines contained in the history file
+export HISTFILESIZE=200000
+
+# Immediately append each command to the history file
+export PROMPT_COMMAND='history -a; history -n; $PROMPT_COMMAND'
 
 # check the window size after each command and, if necessary,
 # update the values of LINES and COLUMNS.
@@ -116,23 +121,20 @@ if ! shopt -oq posix; then
   fi
 fi
 
-# # >>> conda initialize >>>
-# # !! Contents within this block are managed by 'conda init' !!
-# __conda_setup="$('/home/chris/anaconda3/bin/conda' 'shell.bash' 'hook' 2> /dev/null)"
-# if [ $? -eq 0 ]; then
-#     eval "$__conda_setup"
-# else
-#     if [ -f "/home/chris/anaconda3/etc/profile.d/conda.sh" ]; then
-#         . "/home/chris/anaconda3/etc/profile.d/conda.sh"
-#     else
-#         export PATH="/home/chris/anaconda3/bin:$PATH"
-#     fi
-# fi
-# unset __conda_setup
-# # <<< conda initialize <<<
-
-source /opt/ros/iron/setup.bash
-source ~/race_common/install/setup.bash
+# >>> conda initialize >>>
+# !! Contents within this block are managed by 'conda init' !!
+__conda_setup="$('/home/chris-lai/anaconda3/bin/conda' 'shell.bash' 'hook' 2> /dev/null)"
+if [ $? -eq 0 ]; then
+    eval "$__conda_setup"
+else
+    if [ -f "/home/chris-lai/anaconda3/etc/profile.d/conda.sh" ]; then
+        . "/home/chris-lai/anaconda3/etc/profile.d/conda.sh"
+    else
+        export PATH="/home/chris-lai/anaconda3/bin:$PATH"
+    fi
+fi
+unset __conda_setup
+# <<< conda initialize <<<
 
 # alias trt='if [ $# -eq 0 ]; then echo "Please provide an argument Container Name for Docker."; else docker exec -it $1 /bin/bash; fi'
 # alias trt='if [ $# -eq 0 ]; then echo "Please provide an argument Container Name for Docker."; else ls $1; fi'
