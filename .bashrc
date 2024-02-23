@@ -131,14 +131,14 @@ fi
 # unset __conda_setup
 # # <<< conda initialize <<<
 
-# source /opt/ros/iron/setup.bash
-# source ~/race_common/install/setup.bash
+source /opt/ros/iron/setup.bash
+source ~/race_common/install/setup.bash
 
 # alias trt='if [ $# -eq 0 ]; then echo "Please provide an argument Container Name for Docker."; else docker exec -it $1 /bin/bash; fi'
 # alias trt='if [ $# -eq 0 ]; then echo "Please provide an argument Container Name for Docker."; else ls $1; fi'
 
 # Building a docker image with some SSH thing you want to add
-build_dockerfile() {
+docker_build_dockerfile() {
 
     local IMG_NAME_W_TARGET="$1" # Format: <name>:<tag>
 
@@ -159,9 +159,10 @@ build_dockerfile() {
         -t ${IMG_NAME_W_TARGET} .
 }       
 
-create_container_rocker() {
+docker_rocker_create_container() {
     local img_name="$1"
     local cont_name="$2"
+    local nvidia="$3"
 
     # Check if img_name is provided
     if [ -z "${img_name}" ]; then
@@ -175,13 +176,22 @@ create_container_rocker() {
         return 1  # Exit the function with an error status
     fi
 
-    # If both arguments are provided, proceed with the main logic
-    rocker --network host --nvidia runtime -e NVIDIA_DRIVER_CAPABILITIES=all --git --ssh --x11 --privileged --nocleanup --name "${cont_name}" --user -- "${img_name}"
+    # Check if nvidia is provided
+    if [ -z "${nvidia}" ]; then
+        echo "Nvidia flag not detected, Building container without NVIDIA capabilities."
+        # Nvidia tag not detected, building without nvidia capabilities --nocleanup
+        rocker --network host  --git --ssh --x11 --privileged --name "${cont_name}" --user -- "${img_name}"
+    else
+        echo "Nvidia flag detected, building container with NVIDIA."
+        # Nvidia flag detected, building container with nvidia --nocleanup
+        rocker --network host --nvidia runtime -e NVIDIA_DRIVER_CAPABILITIES=all --git --ssh --x11 --privileged --name "${cont_name}" --user -- "${img_name}"
+    fi
 }
 
-create_container_rocker_mount() {
+docker_rocker_create_container_mount() {
     local img_name="$1"
     local cont_name="$2"
+    local nvidia="$3"
 
     # Check if img_name is provided
     if [ -z "${img_name}" ]; then
@@ -195,12 +205,20 @@ create_container_rocker_mount() {
         return 1  # Exit the function with an error status
     fi
 
-    # If both arguments are provided, proceed with the main logic
-    rocker --network host --nvidia runtime -e NVIDIA_DRIVER_CAPABILITIES=all --git --ssh --x11 --privileged --nocleanup --name "${cont_name}" --user --volume "$(pwd)" -- "${img_name}"
+    # Check if nvidia is provided
+    if [ -z "${nvidia}" ]; then
+        echo "Nvidia flag not detected, Building container without NVIDIA capabilities."
+        # Nvidia tag not detected, building without nvidia capabilities
+        rocker --network host --git --ssh --x11 --privileged --name "${cont_name}" --user --volume "$(pwd):$(pwd)" -- "${img_name}"
+    else
+        echo "Nvidia flag detected, building container with NVIDIA."
+        # Nvidia flag detected, building container with nvidia
+        rocker --network host --nvidia runtime -e NVIDIA_DRIVER_CAPABILITIES=all --git --ssh --x11 --privileged  --name "${cont_name}" --user --volume "$(pwd):$(pwd)" -- "${img_name}"
+    fi
 }
 
 
-create_container_docker() {
+docker_create_container() {
     local img_name="$1"
     local cont_name="$2"
 
@@ -217,10 +235,11 @@ create_container_docker() {
     fi
 
     # If both arguments are provided, proceed with the main logic
-    docker run --name "${cont_name}" -it "${img_name}"
+    docker run --name "${cont_name}" -it -e DISPLAY=$DISPLAY -v \
+    /tmp/.X11-unix:/tmp/.X11-unix "${img_name}"
 }
 
-create_container_docker_mount() {
+docker_create_container_mount() {
     local img_name="$1"
     local cont_name="$2"
 
@@ -237,10 +256,11 @@ create_container_docker_mount() {
     fi
 
     # If both arguments are provided, proceed with the main logic
-    docker run --name "${cont_name}" -v "$(pwd):$(pwd)" -it "${img_name}"
+    docker run --name "${cont_name}" -v "$(pwd):$(pwd)" -it -e DISPLAY=$DISPLAY -v \
+    /tmp/.X11-unix:/tmp/.X11-unix "${img_name}"
 }
 
-create_container_rocker() {
+docker_rocker_create_container() {
     local img_name="$1"
     local cont_name="$2"
 
@@ -257,14 +277,14 @@ create_container_rocker() {
     fi
 
     # If both arguments are provided, proceed with the main logic
-    rocker --network host --nvidia runtime -e NVIDIA_DRIVER_CAPABILITIES=all --git --ssh --x11 --privileged --nocleanup --name "${cont_name}" --user -- "${img_name}"
+    rocker --network host --nvidia runtime -e NVIDIA_DRIVER_CAPABILITIES=all --git --ssh --x11 --privileged  --name "${cont_name}" --user -- "${img_name}"
 }
 
 # Example calling o f the above alias:
 # trtdocker "your_image_name_here" "your_container_name_here"
 # create_container_rocker trt11-8:latest trt
 
-joindocker() {
+docker_join_session() {
     if [ $# -eq 0 ]; then
         echo "Please provide an argument Container Name for Docker."
     else
@@ -272,3 +292,5 @@ joindocker() {
     fi
 }
 
+# Dockerfile Generator
+alias dfimage="docker run -v /var/run/docker.sock:/var/run/docker.sock --rm alpine/dfimage"
